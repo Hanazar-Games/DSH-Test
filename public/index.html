@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shrink</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #12151d;
+    --panel-2: #171b25;
+    --line: #232936;
+    --text: #e6e9f0;
+    --muted: #8b93a7;
+    --accent: #5eead4;
+    --accent-ink: #04231f;
+    --danger: #fb7185;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(1200px 600px at 15% -10%, #16233a 0%, var(--bg) 55%);
+    color: var(--text);
+    font: 15px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    max-width: 1040px; margin: 0 auto; padding: 28px 20px 18px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 650; letter-spacing: -0.02em; }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 18px var(--accent); }
+  .brand .tag { font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0; padding-left: 8px; border-left: 1px solid var(--line); }
+  .stats { display: flex; gap: 10px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; text-align: right; }
+  .stat b { display: block; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  main { max-width: 1040px; margin: 0 auto; padding: 0 20px 48px; display: grid; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+  form { display: grid; grid-template-columns: 1fr 170px auto; gap: 10px; }
+  input, select, button { font: inherit; border-radius: 9px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); padding: 10px 12px; }
+  input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input::placeholder { color: #5c6478; }
+  button { cursor: pointer; }
+  button[type="submit"] { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; padding-inline: 22px; }
+  button[type="submit"]:disabled { opacity: 0.55; cursor: progress; }
+  button.ghost { background: transparent; color: var(--muted); padding: 6px 10px; font-size: 13px; }
+  button.ghost:hover { color: var(--text); border-color: #384156; }
+  #notice { margin: 12px 0 0; font-size: 13px; color: var(--accent); word-break: break-all; }
+  #notice[data-tone="error"] { color: var(--danger); }
+  .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  h2 { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 10px; border-bottom: 1px solid #1a1f2b; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  .short { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent); text-decoration: none; }
+  .target { color: var(--text); text-decoration: none; display: inline-block; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+  .target:hover { text-decoration: underline; }
+  .num { font-variant-numeric: tabular-nums; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .danger:hover { color: var(--danger); border-color: var(--danger); }
+  .empty { text-align: center; color: var(--muted); padding: 28px 0; }
+  footer { max-width: 1040px; margin: 0 auto; padding: 0 20px 32px; color: #5c6478; font-size: 12px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #a5b4fc; }
+  @media (max-width: 720px) {
+    header { flex-direction: column; align-items: flex-start; }
+    form { grid-template-columns: 1fr; }
+    .target { max-width: 180px; }
+    td:nth-child(4) { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span>shrink<span class="tag">zero-dependency url shortener</span></div>
+  <div class="stats">
+    <div class="stat"><b id="total-links">–</b><span>links</span></div>
+    <div class="stat"><b id="total-hits">–</b><span>hits</span></div>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <form id="create-form">
+      <input id="url" name="url" type="url" required autocomplete="off" spellcheck="false"
+             placeholder="https://example.com/a/very/long/path?with=query">
+      <select id="ttl" name="ttl" aria-label="expiry">
+        <option value="">never expires</option>
+        <option value="3600">1 hour</option>
+        <option value="86400">1 day</option>
+        <option value="604800">7 days</option>
+        <option value="2592000">30 days</option>
+      </select>
+      <button type="submit">Shorten</button>
+    </form>
+    <p id="notice" role="status" hidden></p>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Links</h2><button class="ghost" id="refresh" type="button">Refresh</button></div>
+    <table>
+      <thead>
+        <tr><th>Short</th><th>Target</th><th>Hits</th><th>Expires</th><th></th></tr>
+      </thead>
+      <tbody id="link-rows"></tbody>
+    </table>
+  </section>
+</main>
+
+<footer>API: <code>POST /api/links</code> · <code>GET /api/links</code> · <code>GET /api/links/:code</code> · <code>GET /:code</code></footer>
+
+<script>
+  const el = (selector) => document.querySelector(selector);
+  const form = el('#create-form');
+  const notice = el('#notice');
+  const rows = el('#link-rows');
+  let noticeTimer;
+
+  function say(message, tone = 'ok') {
+    notice.textContent = message;
+    notice.dataset.tone = tone;
+    notice.hidden = false;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => { notice.hidden = true; }, 5000);
+  }
+
+  async function api(path, options) {
+    const response = await fetch(path, options);
+    if (response.status === 204) return null;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.error?.message ?? `request failed with ${response.status}`);
+    return data;
+  }
+
+  function formatTime(ms) {
+    return ms ? new Date(ms).toLocaleString() : 'never';
+  }
+
+  function textCell(text, className) {
+    const cell = document.createElement('td');
+    cell.textContent = text;
+    if (className) cell.className = className;
+    return cell;
+  }
+
+  function buildRow(link) {
+    const row = document.createElement('tr');
+
+    const shortCell = document.createElement('td');
+    const shortLink = document.createElement('a');
+    shortLink.className = 'short';
+    shortLink.href = `/${link.code}`;
+    shortLink.target = '_blank';
+    shortLink.rel = 'noreferrer';
+    shortLink.textContent = `/${link.code}`;
+    shortCell.append(shortLink);
+
+    const targetCell = document.createElement('td');
+    const target = document.createElement('a');
+    target.className = 'target';
+    target.href = link.url;
+    target.target = '_blank';
+    target.rel = 'noreferrer noopener';
+    target.textContent = link.url;
+    target.title = link.url;
+    targetCell.append(target);
+
+    const hitsCell = textCell(String(link.hits), 'num');
+    const expiresCell = textCell(formatTime(link.expiresAt), 'muted');
+
+    const actionsCell = document.createElement('td');
+    const actions = document.createElement('div');
+    actions.className = 'row-actions';
+
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'ghost';
+    copy.textContent = 'Copy';
+    copy.dataset.action = 'copy';
+    copy.dataset.url = `${location.origin}/${link.code}`;
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'ghost danger';
+    remove.textContent = 'Delete';
+    remove.dataset.action = 'delete';
+    remove.dataset.code = link.code;
+
+    actions.append(copy, remove);
+    actionsCell.append(actions);
+
+    row.append(shortCell, targetCell, hitsCell, expiresCell, actionsCell);
+    return row;
+  }
+
+  function render(data) {
+    el('#total-links').textContent = data.totals.links;
+    el('#total-hits').textContent = data.totals.hits;
+
+    if (data.links.length === 0) {
+      const row = document.createElement('tr');
+      const cell = textCell('No links yet — shorten one above.', 'empty');
+      cell.colSpan = 5;
+      row.append(cell);
+      rows.replaceChildren(row);
+      return;
+    }
+    rows.replaceChildren(...data.links.map(buildRow));
+  }
+
+  async function load() {
+    try {
+      render(await api('/api/links'));
+    } catch (error) {
+      say(error.message, 'error');
+    }
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const url = el('#url').value.trim();
+    const ttl = el('#ttl').value;
+    const submit = form.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    try {
+      const link = await api('/api/links', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ url, ...(ttl ? { ttlSeconds: Number(ttl) } : {}) }),
+      });
+      form.reset();
+      try {
+        await navigator.clipboard.writeText(link.shortUrl);
+        say(`created ${link.shortUrl} — copied to clipboard`);
+      } catch {
+        say(`created ${link.shortUrl}`);
+      }
+      await load();
+    } catch (error) {
+      say(error.message, 'error');
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  rows.addEventListener('click', async (event) => {
+    const button = event.target.closest('button[data-action]');
+    if (!button) return;
+    try {
+      if (button.dataset.action === 'copy') {
+        await navigator.clipboard.writeText(button.dataset.url);
+        say(`copied ${button.dataset.url}`);
+      } else {
+        await api(`/api/links/${button.dataset.code}`, { method: 'DELETE' });
+        say(`deleted /${button.dataset.code}`);
+        await load();
+      }
+    } catch (error) {
+      say(error.message, 'error');
+    }
+  });
+
+  el('#refresh').addEventListener('click', load);
+  setInterval(() => { if (!document.hidden) load(); }, 15000);
+  load();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "shrink",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zero-dependency URL shortener with a built-in dashboard",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "shrink": "./bin/shrink.js"
+  },
+  "scripts": {
+    "start": "node bin/shrink.js",
+    "test": "node --test \"test/*.test.js\"",
+    "test:watch": "node --test --watch \"test/*.test.js\"",
+    "bench": "node scripts/bench.js"
+  }
+}
